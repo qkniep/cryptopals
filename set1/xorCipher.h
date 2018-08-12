@@ -26,6 +26,6 @@ const int CHAR_SCORES[256] = {
 
 
 void printResults(uint8_t* buffer, const size_t &len, uint8_t key, uint64_t score);
-void findBestScoringKey(uint8_t* buffer, const size_t &len, uint64_t &maxScore);
+uint8_t findBestScoringKey(uint8_t* buffer, const size_t &len, uint64_t &maxScore);
 
 #endif /* !XORCIPHER_H */
