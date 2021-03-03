@@ -15,7 +15,7 @@ int main(int argc, char** args) {
 
 	uint8_t* encoded = (uint8_t*) malloc(n * 4);
 	EVP_EncodeBlock(encoded, decoded, n);
-	printf("%s\n", encoded); 
+	printf("%s\n", encoded);
 
 	free(decoded);
 	free(encoded);
