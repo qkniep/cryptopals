@@ -1,0 +1,7 @@
+add_executable(cryptopals_set1_ch1 cryptopals/set1/1.cpp)
+add_executable(cryptopals_set1_ch2 cryptopals/set1/2.cpp)
+add_executable(cryptopals_set1_ch3 cryptopals/set1/3.cpp)
+add_executable(cryptopals_set1_ch4 cryptopals/set1/4.cpp)
+add_executable(cryptopals_set1_ch5 cryptopals/set1/5.cpp)
+add_executable(cryptopals_set1_ch6 cryptopals/set1/6.cpp)
+add_executable(cryptopals_set1_ch7 cryptopals/set1/7.cpp)
