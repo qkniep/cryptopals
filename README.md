@@ -1,5 +1,3 @@
-[![License: MIT](https://img.shields.io/badge/License-MIT-red.svg)](https://opensource.org/licenses/MIT)
-
 # Multi-Language Cryptopals Solutions
 On here, I post the solutions to the cryptopals cryptography challenges as I solve them in Rust, C++, Zig, and OCaml.
 
