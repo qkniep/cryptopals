@@ -12,7 +12,3 @@ On here, I post the solutions to the cryptopals cryptography challenges as I sol
 ```bash
 ./scripts/time.sh set1 ch1
 ```
-
-## Dependencies
-* [OpenSSL](https://www.openssl.org/) for most basic capabilities (Base64, hash functions, etc.)
-* [GMP](https://gmplib.org/) for expensive calculations on arbitrary length integers
