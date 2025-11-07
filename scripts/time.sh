@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-# Usage: ./scripts/test.sh set1 ch1
+# Usage: ./scripts/time.sh set1 ch1
