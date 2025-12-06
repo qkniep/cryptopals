@@ -16,18 +16,15 @@ use super::Padding;
 pub struct Pkcs7<N: ArraySize>(core::marker::PhantomData<N>);
 
 impl<N: ArraySize> Padding<N> for Pkcs7<N> {
-    fn pad(data: &[u8]) -> Array<u8, N> {
-        assert!(data.len() <= N::USIZE);
-        let mut block = Array::<u8, N>::default();
-        block[..data.len()].copy_from_slice(data);
-        let padding_byte = N::USIZE as u8 - data.len() as u8;
-        block[data.len()..].fill(padding_byte);
-        block
+    fn pad_bytes(data: &mut [u8], len: usize) {
+        assert!(len <= data.len());
+        let padding_byte = data.len() as u8 - len as u8;
+        data[len..].fill(padding_byte);
     }
 
-    fn unpad(data: &Array<u8, N>) -> &[u8] {
-        assert!(data.len() == N::USIZE);
-        data.as_slice()
+    fn unpad_bytes(data: &[u8]) -> &[u8] {
+        let padding_byte = data[data.len() - 1];
+        &data[..data.len() - padding_byte as usize]
     }
 }
 
@@ -39,7 +36,11 @@ mod tests {
 
     #[test]
     fn basic() {
-        let padded = Pkcs7::<U20>::pad(b"YELLOW SUBMARINE");
-        assert_eq!(&padded, b"YELLOW SUBMARINE\x04\x04\x04\x04");
+        let mut buffer: [u8; 20] = [0; 20];
+        buffer[0..16].copy_from_slice(b"YELLOW SUBMARINE");
+        Pkcs7::<U20>::pad_bytes(&mut buffer, 16);
+        assert_eq!(&buffer, b"YELLOW SUBMARINE\x04\x04\x04\x04");
+        let unpadded = Pkcs7::<U20>::unpad_bytes(&buffer);
+        assert_eq!(&unpadded, b"YELLOW SUBMARINE");
     }
 }

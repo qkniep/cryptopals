@@ -54,6 +54,30 @@ impl BlockCipher<U16, U16> for Aes128 {
         self.0 = inv_cipher(State(block), Self::ROUNDS, self.1);
         aes_block_to_bytes(self.0.0).into()
     }
+
+    // TODO: add tests
+    fn encrypt_block_in_place(&mut self, block: &mut [u8]) {
+        let input = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = cipher(State(input), Self::ROUNDS, self.1);
+        block.copy_from_slice(aes_block_to_bytes(self.0.0).as_slice())
+    }
+
+    // TODO: add tests
+    fn decrypt_block_in_place(&mut self, block: &mut [u8]) {
+        let input = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = inv_cipher(State(input), Self::ROUNDS, self.1);
+        block.copy_from_slice(aes_block_to_bytes(self.0.0).as_slice())
+    }
 }
 
 /// AES-192
@@ -101,6 +125,30 @@ impl BlockCipher<U16, U24> for Aes192 {
         ];
         self.0 = inv_cipher_192(State(block), Self::ROUNDS, self.1);
         aes_block_to_bytes(self.0.0).into()
+    }
+
+    // TODO: add tests
+    fn encrypt_block_in_place(&mut self, block: &mut [u8]) {
+        let input = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = cipher_192(State(input), Self::ROUNDS, self.1);
+        block.copy_from_slice(aes_block_to_bytes(self.0.0).as_slice())
+    }
+
+    // TODO: add tests
+    fn decrypt_block_in_place(&mut self, block: &mut [u8]) {
+        let input = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = inv_cipher_192(State(input), Self::ROUNDS, self.1);
+        block.copy_from_slice(aes_block_to_bytes(self.0.0).as_slice())
     }
 }
 
@@ -151,6 +199,30 @@ impl BlockCipher<U16, U32> for Aes256 {
         ];
         self.0 = inv_cipher_256(State(block), Self::ROUNDS, self.1);
         aes_block_to_bytes(self.0.0).into()
+    }
+
+    // TODO: add tests
+    fn encrypt_block_in_place(&mut self, block: &mut [u8]) {
+        let input = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = cipher_256(State(input), Self::ROUNDS, self.1);
+        block.copy_from_slice(aes_block_to_bytes(self.0.0).as_slice())
+    }
+
+    // TODO: add tests
+    fn decrypt_block_in_place(&mut self, block: &mut [u8]) {
+        let input = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = inv_cipher_256(State(input), Self::ROUNDS, self.1);
+        block.copy_from_slice(aes_block_to_bytes(self.0.0).as_slice())
     }
 }
 

@@ -14,6 +14,8 @@ pub trait BlockCipher<B: ArraySize, K: ArraySize> {
     fn new(key: Array<u8, K>) -> Self;
     fn encrypt_block(&mut self, block: Array<u8, B>) -> Array<u8, B>;
     fn decrypt_block(&mut self, block: Array<u8, B>) -> Array<u8, B>;
+    fn encrypt_block_in_place(&mut self, block: &mut [u8]);
+    fn decrypt_block_in_place(&mut self, block: &mut [u8]);
 }
 
 pub mod aes;

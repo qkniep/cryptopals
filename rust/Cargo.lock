@@ -207,6 +207,8 @@ dependencies = [
  "anyhow",
  "criterion",
  "cryptopals-padding",
+ "cryptopals-primitives",
+ "hybrid-array",
  "rand",
  "zeroize",
 ]
@@ -239,6 +241,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "criterion",
+ "cryptopals-modes",
  "cryptopals-padding",
  "cryptopals-primitives",
  "cryptopals-utils",

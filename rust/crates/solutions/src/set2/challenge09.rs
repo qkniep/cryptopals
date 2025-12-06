@@ -7,8 +7,10 @@ use hybrid_array::sizes::U20;
 
 /// Pads an ASCII string using PKCS#7.
 pub fn pad_ascii(ascii_str: &str) -> Vec<u8> {
-    let padded = Pkcs7::<U20>::pad(ascii_str.as_bytes());
-    padded.to_vec()
+    let mut buffer = [0u8; 20];
+    buffer[0..ascii_str.len()].copy_from_slice(ascii_str.as_bytes());
+    Pkcs7::<U20>::pad_bytes(&mut buffer, ascii_str.len());
+    buffer.to_vec()
 }
 
 #[cfg(test)]
