@@ -2,58 +2,27 @@
 //!
 //! Solution to [Challenge 7](https://cryptopals.com/sets/1/challenges/7) of Cryptopals.
 
-use cryptopals_primitives::aes::{self, State};
+use cryptopals_primitives::aes::Aes128;
 use cryptopals_utils::base64;
 
 /// Decrypts a base64-encoded ciphertext using AES.
 ///
 /// Handles the case where the ciphertext is broken into multiple lines.
 pub fn decrypt_aes(ciphertext_base64: &str, key: &[u8]) -> String {
+    // decode input
     let ciphertext_base64 = ciphertext_base64
         .lines()
         .fold(String::new(), |acc, line| acc + line.trim());
     let ciphertext = base64::decode(&ciphertext_base64);
-    let key = aes_key_from_bytes(key);
-    let round_keys = aes::key_expansion(key);
+
+    // decrypt with key
+    let mut aes = Aes128::new(key);
     let mut plaintext = String::new();
     for chunk in ciphertext.chunks(16) {
-        let block = aes_block_from_bytes(chunk);
-        let output = aes::inv_cipher(State(block), 10, round_keys);
-        let output_bytes = aes_block_to_bytes(output.0);
-        plaintext += &String::from_utf8_lossy(&output_bytes);
+        let output = aes.decrypt_block(chunk.try_into().unwrap());
+        plaintext += &String::from_utf8_lossy(&output);
     }
     plaintext
-}
-
-fn aes_block_to_bytes(block: [u32; 4]) -> [u8; 16] {
-    unsafe {
-        core::mem::transmute([
-            block[0].to_be(),
-            block[1].to_be(),
-            block[2].to_be(),
-            block[3].to_be(),
-        ])
-    }
-}
-
-fn aes_block_from_bytes(bytes: &[u8]) -> [u32; 4] {
-    assert!(bytes.len() == 16);
-    [
-        u32::from_be_bytes(bytes[0..4].try_into().unwrap()),
-        u32::from_be_bytes(bytes[4..8].try_into().unwrap()),
-        u32::from_be_bytes(bytes[8..12].try_into().unwrap()),
-        u32::from_be_bytes(bytes[12..16].try_into().unwrap()),
-    ]
-}
-
-fn aes_key_from_bytes(key_bytes: &[u8]) -> [u32; 4] {
-    assert!(key_bytes.len() == 16);
-    [
-        u32::from_be_bytes(key_bytes[0..4].try_into().unwrap()),
-        u32::from_be_bytes(key_bytes[4..8].try_into().unwrap()),
-        u32::from_be_bytes(key_bytes[8..12].try_into().unwrap()),
-        u32::from_be_bytes(key_bytes[12..16].try_into().unwrap()),
-    ]
 }
 
 #[cfg(test)]

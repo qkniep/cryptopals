@@ -16,40 +16,101 @@ impl Aes128 {
     const BLOCK_BYTES: u8 = 16;
     const ROUNDS: u8 = 10;
 
-    fn new(key: &[u8]) -> Self {
-        assert_eq!(key.len(), Aes128::KEY_BYTES as usize);
+    pub fn new(key: &[u8]) -> Self {
+        assert_eq!(key.len(), Self::KEY_BYTES as usize);
         let key = [
-            u32::from_le_bytes(key[0..4].try_into().unwrap()),
-            u32::from_le_bytes(key[4..8].try_into().unwrap()),
-            u32::from_le_bytes(key[8..12].try_into().unwrap()),
-            u32::from_le_bytes(key[12..16].try_into().unwrap()),
+            u32::from_be_bytes(key[0..4].try_into().unwrap()),
+            u32::from_be_bytes(key[4..8].try_into().unwrap()),
+            u32::from_be_bytes(key[8..12].try_into().unwrap()),
+            u32::from_be_bytes(key[12..16].try_into().unwrap()),
         ];
-        Aes128(State([0; 4]), key_expansion(key))
+        Self(State([0; 4]), key_expansion(key))
+    }
+
+    pub fn encrypt_block(&mut self, block: [u8; 16]) -> [u8; 16] {
+        let block = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = cipher(State(block), Self::ROUNDS, self.1);
+        aes_block_to_bytes(self.0.0)
+    }
+
+    pub fn decrypt_block(&mut self, block: [u8; 16]) -> [u8; 16] {
+        let block = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = inv_cipher(State(block), Self::ROUNDS, self.1);
+        aes_block_to_bytes(self.0.0)
+    }
+}
+
+fn aes_block_to_bytes(block: [u32; 4]) -> [u8; 16] {
+    unsafe {
+        core::mem::transmute([
+            block[0].to_be(),
+            block[1].to_be(),
+            block[2].to_be(),
+            block[3].to_be(),
+        ])
     }
 }
 
 /// AES-192
 ///
 /// 192-bit key, 128-bit blocks, 12 rounds
-#[derive(Clone, Copy, Debug)]
-pub struct Aes192;
+#[derive(Clone, Debug)]
+pub struct Aes192(State, [u32; 52]);
 
 impl Aes192 {
     const KEY_BYTES: u8 = 24;
     const BLOCK_BYTES: u8 = 16;
     const ROUNDS: u8 = 12;
+
+    fn new(key: &[u8]) -> Self {
+        assert_eq!(key.len(), Self::KEY_BYTES as usize);
+        let key = [
+            u32::from_be_bytes(key[0..4].try_into().unwrap()),
+            u32::from_be_bytes(key[4..8].try_into().unwrap()),
+            u32::from_be_bytes(key[8..12].try_into().unwrap()),
+            u32::from_be_bytes(key[12..16].try_into().unwrap()),
+            u32::from_be_bytes(key[16..20].try_into().unwrap()),
+            u32::from_be_bytes(key[20..24].try_into().unwrap()),
+        ];
+        Self(State([0; 4]), key_expansion_192(key))
+    }
 }
 
 /// AES-256
 ///
 /// 256-bit key, 128-bit blocks, 14 rounds
-#[derive(Clone, Copy, Debug)]
-pub struct Aes256;
+#[derive(Clone, Debug)]
+pub struct Aes256(State, [u32; 60]);
 
 impl Aes256 {
     const KEY_BYTES: u8 = 32;
     const BLOCK_BYTES: u8 = 16;
     const ROUNDS: u8 = 14;
+
+    fn new(key: &[u8]) -> Self {
+        assert_eq!(key.len(), Self::KEY_BYTES as usize);
+        let key = [
+            u32::from_be_bytes(key[0..4].try_into().unwrap()),
+            u32::from_be_bytes(key[4..8].try_into().unwrap()),
+            u32::from_be_bytes(key[8..12].try_into().unwrap()),
+            u32::from_be_bytes(key[12..16].try_into().unwrap()),
+            u32::from_be_bytes(key[16..20].try_into().unwrap()),
+            u32::from_be_bytes(key[20..24].try_into().unwrap()),
+            u32::from_be_bytes(key[24..28].try_into().unwrap()),
+            u32::from_be_bytes(key[28..32].try_into().unwrap()),
+        ];
+        Self(State([0; 4]), key_expansion_256(key))
+    }
 }
 
 /// Internal state of AES.
@@ -59,7 +120,7 @@ impl Aes256 {
 /// Each column's first byte is on the top row (0), and the last byte is on the bottom row (3).
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[repr(transparent)]
-pub struct State(pub [u32; 4]);
+struct State([u32; 4]);
 
 impl State {
     fn shift_rows(&mut self) {
@@ -263,7 +324,7 @@ impl State {
     }
 }
 
-pub fn cipher(input: State, rounds: u8, round_keys: [u32; 44]) -> State {
+fn cipher(input: State, rounds: u8, round_keys: [u32; 44]) -> State {
     let mut state = input;
     state.add_round_key(&round_keys[0..4]);
     for round in 1..rounds {
@@ -278,7 +339,7 @@ pub fn cipher(input: State, rounds: u8, round_keys: [u32; 44]) -> State {
     state
 }
 
-pub fn inv_cipher(input: State, rounds: u8, round_keys: [u32; 44]) -> State {
+fn inv_cipher(input: State, rounds: u8, round_keys: [u32; 44]) -> State {
     let mut state = input;
     state.add_round_key(&round_keys[40..44]);
     for round in (1..rounds).rev() {
@@ -298,7 +359,7 @@ fn inv_sub_bytes() {
 }
 
 // TODO: generalize, currently 10 rounds hard-coded
-pub fn key_expansion(key: [u32; 4]) -> [u32; 44] {
+fn key_expansion(key: [u32; 4]) -> [u32; 44] {
     const ROUND_CONSTANTS: [u32; 10] = [
         0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000,
         0x80000000, 0x1b000000, 0x36000000,
@@ -317,6 +378,62 @@ pub fn key_expansion(key: [u32; 4]) -> [u32; 44] {
             keys[i] = keys[i - 4] ^ sub_word(rot_word(temp)) ^ ROUND_CONSTANTS[i / 4 - 1];
         } else {
             keys[i] = keys[i - 4] ^ keys[i - 1];
+        }
+        i += 1;
+    }
+
+    keys
+}
+
+pub fn key_expansion_192(key: [u32; 6]) -> [u32; 52] {
+    const ROUND_CONSTANTS: [u32; 10] = [
+        0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000,
+        0x80000000, 0x1b000000, 0x36000000,
+    ];
+    const NK: usize = 6;
+
+    let mut keys = [0; 52];
+
+    for (i, k) in key.iter().enumerate() {
+        keys[i] = *k;
+    }
+
+    let mut i = NK;
+    while i < 52 {
+        let temp = keys[i - 1];
+        if i.is_multiple_of(NK) {
+            keys[i] = keys[i - NK] ^ sub_word(rot_word(temp)) ^ ROUND_CONSTANTS[i / NK - 1];
+        } else {
+            keys[i] = keys[i - NK] ^ keys[i - 1];
+        }
+        i += 1;
+    }
+
+    keys
+}
+
+pub fn key_expansion_256(key: [u32; 8]) -> [u32; 60] {
+    const ROUND_CONSTANTS: [u32; 10] = [
+        0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000, 0x20000000, 0x40000000,
+        0x80000000, 0x1b000000, 0x36000000,
+    ];
+    const NK: usize = 8;
+
+    let mut keys = [0; 60];
+
+    for (i, k) in key.iter().enumerate() {
+        keys[i] = *k;
+    }
+
+    let mut i = NK;
+    while i < 60 {
+        let temp = keys[i - 1];
+        if i.is_multiple_of(NK) {
+            keys[i] = keys[i - NK] ^ sub_word(rot_word(temp)) ^ ROUND_CONSTANTS[i / NK - 1];
+        } else if i % NK == 4 {
+            keys[i] = keys[i - NK] ^ sub_word(temp);
+        } else {
+            keys[i] = keys[i - NK] ^ keys[i - 1];
         }
         i += 1;
     }
@@ -453,6 +570,54 @@ mod tests {
         assert_eq!(expanded_key[32], 0xead27321);
         assert_eq!(expanded_key[40], 0xd014f9a8);
         assert_eq!(expanded_key[43], 0xb6630ca6);
+    }
+
+    /// Key Expansion Example (192-bit key)
+    ///
+    /// Source: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
+    #[test]
+    fn key_expansion_192() {
+        const KEY: [u32; 6] = [
+            0x8e73b0f7, 0xda0e6452, 0xc810f32b, 0x809079e5, 0x62f8ead2, 0x522c6b7b,
+        ];
+
+        let expanded_key = super::key_expansion_192(KEY);
+        assert_eq!(&expanded_key[0..6], &KEY[0..6]);
+        assert_eq!(expanded_key[6], 0xfe0c91f7);
+        assert_eq!(expanded_key[7], 0x2402f5a5);
+        assert_eq!(expanded_key[8], 0xec12068e);
+        assert_eq!(expanded_key[9], 0x6c827f6b);
+        assert_eq!(expanded_key[10], 0x0e7a95b9);
+        assert_eq!(expanded_key[12], 0x4db7b4bd);
+        assert_eq!(expanded_key[20], 0xa448f6d9);
+        assert_eq!(expanded_key[32], 0x485f7032);
+        assert_eq!(expanded_key[40], 0xa7e1466c);
+        assert_eq!(expanded_key[50], 0x8ecc7204);
+        assert_eq!(expanded_key[51], 0x01002202);
+    }
+
+    /// Key Expansion Example (256-bit key)
+    ///
+    /// Source: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
+    #[test]
+    fn key_expansion_256() {
+        const KEY: [u32; 8] = [
+            0x603deb10, 0x15ca71be, 0x2b73aef0, 0x857d7781, 0x1f352c07, 0x3b6108d7, 0x2d9810a3,
+            0x0914dff4,
+        ];
+
+        let expanded_key = super::key_expansion_256(KEY);
+        assert_eq!(&expanded_key[0..8], &KEY[0..8]);
+        assert_eq!(expanded_key[8], 0x9ba35411);
+        assert_eq!(expanded_key[9], 0x8e6925af);
+        assert_eq!(expanded_key[10], 0xa51a8b5f);
+        assert_eq!(expanded_key[12], 0xa8b09c1a);
+        assert_eq!(expanded_key[16], 0xd59aecb8);
+        assert_eq!(expanded_key[20], 0xb5a9328a);
+        assert_eq!(expanded_key[32], 0x68007bac);
+        assert_eq!(expanded_key[40], 0xde136967);
+        assert_eq!(expanded_key[50], 0xe2757e4f);
+        assert_eq!(expanded_key[59], 0x706c631e);
     }
 
     /// Cipher Example (128-bit key)
