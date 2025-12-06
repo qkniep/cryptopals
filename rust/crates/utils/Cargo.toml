@@ -1,0 +1,19 @@
+[package]
+name = "cryptopals-utils"
+version = "0.1.0"
+edition.workspace = true
+authors.workspace = true
+description = "Utility functions for Cryptopals: encoding, byte ops, conversions, helpers."
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+anyhow = { workspace = true }
+rand = { workspace = true }
+
+# Optional: zeroize for securely clearing sensitive buffers
+zeroize = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }

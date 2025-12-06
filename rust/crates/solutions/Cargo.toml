@@ -1,0 +1,19 @@
+[package]
+name = "cryptopals-solutions"
+version = "0.1.0"
+edition = "2024"
+authors.workspace = true
+description = "Solutions to the Cryptopals challenges"
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+anyhow = { workspace = true }
+cryptopals-primitives = { path = "../primitives" }
+cryptopals-utils = { path = "../utils" }
+rand = { workspace = true }
+zeroize = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }

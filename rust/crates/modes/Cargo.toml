@@ -1,0 +1,19 @@
+[package]
+name = "cryptopals-modes"
+version = "0.1.0"
+edition = "2024"
+authors = ["Quentin Kniep <hello@quentinkniep.com>"]
+description = "Utility functions for Cryptopals: encoding, byte ops, conversions, helpers."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/yourusername/cryptopals"
+publish = false
+
+[dependencies]
+anyhow = { workspace = true }
+rand = { workspace = true }
+
+# Optional: zeroize for securely clearing sensitive buffers
+zeroize = { workspace = true }
+
+[dev-dependencies]
+criterion = { workspace = true }
