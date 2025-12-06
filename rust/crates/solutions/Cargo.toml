@@ -10,6 +10,7 @@ publish = false
 
 [dependencies]
 anyhow = { workspace = true }
+cryptopals-attacks = { path = "../attacks" }
 cryptopals-modes = { path = "../modes" }
 cryptopals-padding = { path = "../padding" }
 cryptopals-primitives = { path = "../primitives" }

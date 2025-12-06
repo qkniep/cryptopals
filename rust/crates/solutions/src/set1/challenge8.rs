@@ -12,15 +12,15 @@ use cryptopals_utils::hex;
 ///
 /// Returns the best guess at the ECB ciphertext.
 pub fn detect_ecb(potential_ciphertexts: &str) -> String {
-    const BLOCK_LENGHT_BYTES: usize = 16;
+    const BLOCK_LENGTH_BYTES: usize = 16;
 
     let mut best_guess = String::new();
     let mut best_repeating_blocks = 0;
     for ciphertext_hex in potential_ciphertexts.lines() {
         let ciphertext = hex::decode(ciphertext_hex);
         let mut repeats = 0;
-        for (i, block1) in ciphertext.chunks(BLOCK_LENGHT_BYTES).enumerate() {
-            for (j, block2) in ciphertext.chunks(BLOCK_LENGHT_BYTES).enumerate() {
+        for (i, block1) in ciphertext.chunks(BLOCK_LENGTH_BYTES).enumerate() {
+            for (j, block2) in ciphertext.chunks(BLOCK_LENGTH_BYTES).enumerate() {
                 if i != j && block1 == block2 {
                     repeats += 1;
                 }
