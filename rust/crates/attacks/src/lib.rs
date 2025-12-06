@@ -138,11 +138,16 @@ impl EcbUserOracle {
     fn create_user_with_role(&self, email: &str, role: &str) -> String {
         let mut rng = rand::rng();
         let mut params = HashMap::new();
-        let user_id = rng.random_range(1..=1000);
-        params.insert("email".to_string(), email.to_string());
+        let user_id = rng.random_range(10..=99);
+        let sanitized_email = email
+            .chars()
+            .filter(|c| *c != '=' && *c != '&')
+            .collect::<String>();
+        params.insert("email".to_string(), sanitized_email);
         params.insert("id".to_string(), user_id.to_string());
         params.insert("role".to_string(), role.to_string());
         let raw_token = build_url_params(params);
+        println!("raw_token: {}", raw_token);
 
         // encrypt email with AES-ECB
         let mut ecb = Ecb::new(self.aes.clone());

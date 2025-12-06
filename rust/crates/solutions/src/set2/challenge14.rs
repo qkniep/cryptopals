@@ -3,7 +3,6 @@
 //! Solution to [Challenge 14](https://cryptopals.com/sets/2/challenges/14) of Cryptopals.
 
 use cryptopals_attacks::ByteAtATimeEcbOracle;
-use cryptopals_utils::hex;
 
 /// Launches byte-at-a-time ECB decryption attack.
 ///
