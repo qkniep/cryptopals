@@ -1,18 +1,28 @@
+use std::collections::HashMap;
+
 use cryptopals_modes::{cbc::Cbc, ecb::Ecb};
 use cryptopals_padding::pkcs7::Pkcs7;
 use cryptopals_primitives::{BlockCipher, aes::Aes128};
-use cryptopals_utils::base64;
+use cryptopals_utils::{
+    base64, hex,
+    url_params::{self, build_url_params, parse_url_params},
+};
 use hybrid_array::sizes::U16;
 use rand::prelude::*;
 
-///
+/// Indicates which block cipher mode was used.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ModeUsed {
     ECB,
     CBC,
 }
 
+/// Acts as an encryption oracle on `input`.
 ///
+/// Randomly encrypts `input` with either AES in ECB mode or AES in CBC mode (50/50).
+/// Also, randomly preprends and appends random bytes (5-10 bytes each).
+///
+/// Returns `(ciphertext, mode_used)`.
 pub fn encryption_oracle_ecb_cbc(input: &[u8]) -> (Vec<u8>, ModeUsed) {
     // initialize AES with random key
     let mut rng = rand::rng();
@@ -47,6 +57,7 @@ pub fn encryption_oracle_ecb_cbc(input: &[u8]) -> (Vec<u8>, ModeUsed) {
 pub struct ByteAtATimeEcbOracle {
     aes: Aes128,
     data_to_add: Vec<u8>,
+    random_prefix: Vec<u8>,
 }
 
 impl ByteAtATimeEcbOracle {
@@ -62,7 +73,16 @@ impl ByteAtATimeEcbOracle {
         rng.fill_bytes(&mut key);
         let aes = Aes128::new(key.into());
 
-        Self { aes, data_to_add }
+        // create random prefix
+        let prefix_len = rng.random_range(1..=32);
+        let mut random_prefix = vec![0; prefix_len];
+        rng.fill_bytes(&mut random_prefix);
+
+        Self {
+            aes,
+            data_to_add,
+            random_prefix,
+        }
     }
 
     ///
@@ -78,5 +98,88 @@ impl ByteAtATimeEcbOracle {
         let mut ecb = Ecb::new(self.aes.clone());
         ecb.encrypt_padded::<Pkcs7<U16>>(&mut buffer, len);
         buffer
+    }
+
+    ///
+    pub fn encrypt_harder(&self, input: &[u8]) -> Vec<u8> {
+        let buffer = [self.random_prefix.as_slice(), input].concat();
+        self.encrypt(&buffer)
+    }
+}
+
+///
+pub struct EcbUserOracle {
+    aes: Aes128,
+}
+
+impl EcbUserOracle {
+    /// Creates a new instance of the oracle with a random AES key.
+    pub fn new() -> Self {
+        // initialize AES with random key
+        let mut rng = rand::rng();
+        let mut key = [0; 16];
+        rng.fill_bytes(&mut key);
+        let aes = Aes128::new(key.into());
+
+        Self { aes }
+    }
+
+    /// Creates a new user.
+    ///
+    /// Returns the AES-ECB encrypted user token in hex encoding.
+    pub fn create_user(&self, email: &str) -> String {
+        self.create_user_with_role(email, "user")
+    }
+
+    fn create_admin(&self, email: &str) -> String {
+        self.create_user_with_role(email, "admin")
+    }
+
+    fn create_user_with_role(&self, email: &str, role: &str) -> String {
+        let mut rng = rand::rng();
+        let mut params = HashMap::new();
+        let user_id = rng.random_range(1..=1000);
+        params.insert("email".to_string(), email.to_string());
+        params.insert("id".to_string(), user_id.to_string());
+        params.insert("role".to_string(), role.to_string());
+        let raw_token = build_url_params(params);
+
+        // encrypt email with AES-ECB
+        let mut ecb = Ecb::new(self.aes.clone());
+        let mut buffer = vec![0; raw_token.len().next_multiple_of(16)];
+        buffer[..raw_token.len()].copy_from_slice(raw_token.as_bytes());
+        ecb.encrypt_padded::<Pkcs7<U16>>(&mut buffer, raw_token.len());
+        hex::encode(&buffer)
+    }
+
+    /// Tries to perform an admin action.
+    ///
+    /// Takes an hex encoded AES-ECB encrypted user token as input.
+    /// Decrypts and decodes the token and validates the user's role.
+    ///
+    /// Returns `true` if the action was successful (the user was an admin)..
+    pub fn try_admin_action(&self, token_hex: &str) -> bool {
+        let mut ciphertext = hex::decode(token_hex);
+        let mut ecb = Ecb::new(self.aes.clone());
+        let user_token = ecb.decrypt_padded::<Pkcs7<U16>>(&mut ciphertext);
+
+        let params = parse_url_params(&String::from_utf8_lossy(user_token));
+        println!("params: {:#?}", params);
+        params.get("role") == Some(&"admin".to_string())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ecb_user_oracle() {
+        let oracle = EcbUserOracle::new();
+        let token = oracle.create_user("hello@test.com");
+        assert!(!oracle.try_admin_action(&token));
+
+        let token = oracle.create_admin("admin@test.com");
+        assert!(oracle.try_admin_action(&token));
     }
 }

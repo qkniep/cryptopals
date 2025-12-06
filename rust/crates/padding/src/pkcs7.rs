@@ -23,7 +23,9 @@ impl<N: ArraySize> Padding<N> for Pkcs7<N> {
     }
 
     fn unpad_bytes(data: &[u8]) -> &[u8] {
+        assert!(data.len().is_multiple_of(N::USIZE));
         let padding_byte = data[data.len() - 1];
+        assert!(padding_byte < N::USIZE as u8);
         &data[..data.len() - padding_byte as usize]
     }
 }

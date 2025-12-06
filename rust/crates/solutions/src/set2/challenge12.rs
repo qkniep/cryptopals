@@ -35,13 +35,8 @@ pub fn recover_additional_plaintext() -> (String, usize) {
             queries += 1;
         }
 
-        if idx < 15 {
-            input.truncate(input.len() - 1);
-        } else {
+        if idx >= 15 {
             offset += 1;
-        }
-        if idx % 16 == 15 {
-            input.extend([0; 15]);
         }
     }
 
@@ -50,16 +45,14 @@ pub fn recover_additional_plaintext() -> (String, usize) {
 
 fn detect_ecb(ciphertext: &[u8]) -> bool {
     const BLOCK_LENGTH_BYTES: usize = 16;
-
-    let mut repeats = 0;
     for (i, block1) in ciphertext.chunks(BLOCK_LENGTH_BYTES).enumerate() {
         for (j, block2) in ciphertext.chunks(BLOCK_LENGTH_BYTES).enumerate() {
             if i != j && block1 == block2 {
-                repeats += 1;
+                return true;
             }
         }
     }
-    repeats > 0
+    false
 }
 
 #[cfg(test)]

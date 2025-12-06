@@ -43,10 +43,10 @@ impl<C: BlockCipher<U16, U16>> Ecb<C> {
 
     ///
     pub fn decrypt_padded<'a, P: Padding<U16>>(&mut self, bytes: &'a mut [u8]) -> &'a [u8] {
-        let unpadded_len = P::unpad_bytes(bytes).len();
         for chunk in bytes.chunks_exact_mut(C::BLOCK_SIZE) {
             self.cipher.decrypt_block_in_place(chunk);
         }
+        let unpadded_len = P::unpad_bytes(bytes).len();
         &bytes[..unpadded_len]
     }
 }
