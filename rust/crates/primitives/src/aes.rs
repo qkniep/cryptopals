@@ -5,6 +5,11 @@
 //!
 //! [NIST FIPS 197]: (https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-38d.pdf)
 
+use hybrid_array::Array;
+use hybrid_array::sizes::{U16, U24, U32};
+
+use crate::BlockCipher;
+
 /// AES-128
 ///
 /// 128-bit key, 128-bit blocks, 10 rounds
@@ -15,9 +20,10 @@ impl Aes128 {
     const KEY_BYTES: u8 = 16;
     const BLOCK_BYTES: u8 = 16;
     const ROUNDS: u8 = 10;
+}
 
-    pub fn new(key: &[u8]) -> Self {
-        assert_eq!(key.len(), Self::KEY_BYTES as usize);
+impl BlockCipher<U16, U16> for Aes128 {
+    fn new(key: Array<u8, U16>) -> Self {
         let key = [
             u32::from_be_bytes(key[0..4].try_into().unwrap()),
             u32::from_be_bytes(key[4..8].try_into().unwrap()),
@@ -27,7 +33,7 @@ impl Aes128 {
         Self(State([0; 4]), key_expansion(key))
     }
 
-    pub fn encrypt_block(&mut self, block: [u8; 16]) -> [u8; 16] {
+    fn encrypt_block(&mut self, block: Array<u8, U16>) -> Array<u8, U16> {
         let block = [
             u32::from_be_bytes(block[0..4].try_into().unwrap()),
             u32::from_be_bytes(block[4..8].try_into().unwrap()),
@@ -35,10 +41,10 @@ impl Aes128 {
             u32::from_be_bytes(block[12..16].try_into().unwrap()),
         ];
         self.0 = cipher(State(block), Self::ROUNDS, self.1);
-        aes_block_to_bytes(self.0.0)
+        aes_block_to_bytes(self.0.0).into()
     }
 
-    pub fn decrypt_block(&mut self, block: [u8; 16]) -> [u8; 16] {
+    fn decrypt_block(&mut self, block: Array<u8, U16>) -> Array<u8, U16> {
         let block = [
             u32::from_be_bytes(block[0..4].try_into().unwrap()),
             u32::from_be_bytes(block[4..8].try_into().unwrap()),
@@ -46,18 +52,7 @@ impl Aes128 {
             u32::from_be_bytes(block[12..16].try_into().unwrap()),
         ];
         self.0 = inv_cipher(State(block), Self::ROUNDS, self.1);
-        aes_block_to_bytes(self.0.0)
-    }
-}
-
-fn aes_block_to_bytes(block: [u32; 4]) -> [u8; 16] {
-    unsafe {
-        core::mem::transmute([
-            block[0].to_be(),
-            block[1].to_be(),
-            block[2].to_be(),
-            block[3].to_be(),
-        ])
+        aes_block_to_bytes(self.0.0).into()
     }
 }
 
@@ -71,9 +66,10 @@ impl Aes192 {
     const KEY_BYTES: u8 = 24;
     const BLOCK_BYTES: u8 = 16;
     const ROUNDS: u8 = 12;
+}
 
-    fn new(key: &[u8]) -> Self {
-        assert_eq!(key.len(), Self::KEY_BYTES as usize);
+impl BlockCipher<U16, U24> for Aes192 {
+    fn new(key: Array<u8, U24>) -> Self {
         let key = [
             u32::from_be_bytes(key[0..4].try_into().unwrap()),
             u32::from_be_bytes(key[4..8].try_into().unwrap()),
@@ -83,6 +79,28 @@ impl Aes192 {
             u32::from_be_bytes(key[20..24].try_into().unwrap()),
         ];
         Self(State([0; 4]), key_expansion_192(key))
+    }
+
+    fn encrypt_block(&mut self, block: Array<u8, U16>) -> Array<u8, U16> {
+        let block = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = cipher_192(State(block), Self::ROUNDS, self.1);
+        aes_block_to_bytes(self.0.0).into()
+    }
+
+    fn decrypt_block(&mut self, block: Array<u8, U16>) -> Array<u8, U16> {
+        let block = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = inv_cipher_192(State(block), Self::ROUNDS, self.1);
+        aes_block_to_bytes(self.0.0).into()
     }
 }
 
@@ -96,9 +114,10 @@ impl Aes256 {
     const KEY_BYTES: u8 = 32;
     const BLOCK_BYTES: u8 = 16;
     const ROUNDS: u8 = 14;
+}
 
-    fn new(key: &[u8]) -> Self {
-        assert_eq!(key.len(), Self::KEY_BYTES as usize);
+impl BlockCipher<U16, U32> for Aes256 {
+    fn new(key: Array<u8, U32>) -> Self {
         let key = [
             u32::from_be_bytes(key[0..4].try_into().unwrap()),
             u32::from_be_bytes(key[4..8].try_into().unwrap()),
@@ -110,6 +129,28 @@ impl Aes256 {
             u32::from_be_bytes(key[28..32].try_into().unwrap()),
         ];
         Self(State([0; 4]), key_expansion_256(key))
+    }
+
+    fn encrypt_block(&mut self, block: Array<u8, U16>) -> Array<u8, U16> {
+        let block = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = cipher_256(State(block), Self::ROUNDS, self.1);
+        aes_block_to_bytes(self.0.0).into()
+    }
+
+    fn decrypt_block(&mut self, block: Array<u8, U16>) -> Array<u8, U16> {
+        let block = [
+            u32::from_be_bytes(block[0..4].try_into().unwrap()),
+            u32::from_be_bytes(block[4..8].try_into().unwrap()),
+            u32::from_be_bytes(block[8..12].try_into().unwrap()),
+            u32::from_be_bytes(block[12..16].try_into().unwrap()),
+        ];
+        self.0 = inv_cipher_256(State(block), Self::ROUNDS, self.1);
+        aes_block_to_bytes(self.0.0).into()
     }
 }
 
@@ -339,9 +380,69 @@ fn cipher(input: State, rounds: u8, round_keys: [u32; 44]) -> State {
     state
 }
 
+fn cipher_192(input: State, rounds: u8, round_keys: [u32; 52]) -> State {
+    let mut state = input;
+    state.add_round_key(&round_keys[0..4]);
+    for round in 1..rounds {
+        state.sub_bytes();
+        state.shift_rows();
+        state.mix_columns();
+        state.add_round_key(&round_keys[4 * round as usize..4 * (round as usize + 1)]);
+    }
+    state.sub_bytes();
+    state.shift_rows();
+    state.add_round_key(&round_keys[48..52]);
+    state
+}
+
+fn cipher_256(input: State, rounds: u8, round_keys: [u32; 60]) -> State {
+    let mut state = input;
+    state.add_round_key(&round_keys[0..4]);
+    for round in 1..rounds {
+        state.sub_bytes();
+        state.shift_rows();
+        state.mix_columns();
+        state.add_round_key(&round_keys[4 * round as usize..4 * (round as usize + 1)]);
+    }
+    state.sub_bytes();
+    state.shift_rows();
+    state.add_round_key(&round_keys[56..60]);
+    state
+}
+
 fn inv_cipher(input: State, rounds: u8, round_keys: [u32; 44]) -> State {
     let mut state = input;
     state.add_round_key(&round_keys[40..44]);
+    for round in (1..rounds).rev() {
+        state.inv_shift_rows();
+        state.inv_sub_bytes();
+        state.add_round_key(&round_keys[4 * round as usize..4 * (round as usize + 1)]);
+        state.inv_mix_columns();
+    }
+    state.inv_shift_rows();
+    state.inv_sub_bytes();
+    state.add_round_key(&round_keys[0..4]);
+    state
+}
+
+fn inv_cipher_192(input: State, rounds: u8, round_keys: [u32; 52]) -> State {
+    let mut state = input;
+    state.add_round_key(&round_keys[48..52]);
+    for round in (1..rounds).rev() {
+        state.inv_shift_rows();
+        state.inv_sub_bytes();
+        state.add_round_key(&round_keys[4 * round as usize..4 * (round as usize + 1)]);
+        state.inv_mix_columns();
+    }
+    state.inv_shift_rows();
+    state.inv_sub_bytes();
+    state.add_round_key(&round_keys[0..4]);
+    state
+}
+
+fn inv_cipher_256(input: State, rounds: u8, round_keys: [u32; 60]) -> State {
+    let mut state = input;
+    state.add_round_key(&round_keys[56..60]);
     for round in (1..rounds).rev() {
         state.inv_shift_rows();
         state.inv_sub_bytes();
@@ -501,6 +602,17 @@ fn inv_sub_word(word: u32) -> u32 {
     output
 }
 
+fn aes_block_to_bytes(block: [u32; 4]) -> [u8; 16] {
+    unsafe {
+        core::mem::transmute([
+            block[0].to_be(),
+            block[1].to_be(),
+            block[2].to_be(),
+            block[3].to_be(),
+        ])
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -624,7 +736,7 @@ mod tests {
     ///
     /// Source: https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.197-upd1.pdf
     #[test]
-    fn cipher_128() {
+    fn cipher_example() {
         const PLAINTEXT: [u32; 4] = [0x3243f6a8, 0x885a308d, 0x313198a2, 0xe0370734];
         const KEY: [u32; 4] = [0x2b7e1516, 0x28aed2a6, 0xabf71588, 0x09cf4f3c];
 
@@ -640,7 +752,7 @@ mod tests {
     ///
     /// Source: https://csrc.nist.gov/files/pubs/fips/197/final/docs/fips-197.pdf
     #[test]
-    fn cipher_2_128() {
+    fn example_vector_128() {
         const PLAINTEXT: [u32; 4] = [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff];
         const KEY: [u32; 4] = [0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f];
 
@@ -652,7 +764,44 @@ mod tests {
         assert_eq!(plaintext.0, PLAINTEXT);
     }
 
-    /// ECB Encryption/Decryption Test Vector
+    /// Example Vector (192-bit key)
+    ///
+    /// Source: https://csrc.nist.gov/files/pubs/fips/197/final/docs/fips-197.pdf
+    #[test]
+    fn example_vector_192() {
+        const PLAINTEXT: [u32; 4] = [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff];
+        const KEY: [u32; 6] = [
+            0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617,
+        ];
+
+        let expanded_key = super::key_expansion_192(KEY);
+        let output = cipher_192(State(PLAINTEXT), 12, expanded_key);
+        assert_eq!(output.0, [0xdda97ca4, 0x864cdfe0, 0x6eaf70a0, 0xec0d7191]);
+
+        let plaintext = inv_cipher_192(output, 12, expanded_key);
+        assert_eq!(plaintext.0, PLAINTEXT);
+    }
+
+    /// Example Vector (256-bit key)
+    ///
+    /// Source: https://csrc.nist.gov/files/pubs/fips/197/final/docs/fips-197.pdf
+    #[test]
+    fn example_vector_256() {
+        const PLAINTEXT: [u32; 4] = [0x00112233, 0x44556677, 0x8899aabb, 0xccddeeff];
+        const KEY: [u32; 8] = [
+            0x00010203, 0x04050607, 0x08090a0b, 0x0c0d0e0f, 0x10111213, 0x14151617, 0x18191a1b,
+            0x1c1d1e1f,
+        ];
+
+        let expanded_key = super::key_expansion_256(KEY);
+        let output = cipher_256(State(PLAINTEXT), 14, expanded_key);
+        assert_eq!(output.0, [0x8ea2b7ca, 0x516745bf, 0xeafc4990, 0x4b496089]);
+
+        let plaintext = inv_cipher_256(output, 14, expanded_key);
+        assert_eq!(plaintext.0, PLAINTEXT);
+    }
+
+    /// ECB Encryption/Decryption Test Vector (128-bit key)
     ///
     /// Source: https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines/example-values
     #[test]
@@ -682,6 +831,79 @@ mod tests {
         // decryption
         for i in 0..4 {
             let output = inv_cipher(State(CIPHERTEXT[i]), 10, expanded_key);
+            assert_eq!(output.0, PLAINTEXT[i]);
+        }
+    }
+
+    /// ECB Encryption/Decryption Test Vector (192-bit key)
+    ///
+    /// Source: https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines/example-values
+    #[test]
+    fn ecb_192() {
+        const KEY: [u32; 6] = [
+            0x8E73B0F7, 0xDA0E6452, 0xC810F32B, 0x809079E5, 0x62F8EAD2, 0x522C6B7B,
+        ];
+        const PLAINTEXT: [[u32; 4]; 4] = [
+            [0x6BC1BEE2, 0x2E409F96, 0xE93D7E11, 0x7393172A],
+            [0xAE2D8A57, 0x1E03AC9C, 0x9EB76FAC, 0x45AF8E51],
+            [0x30C81C46, 0xA35CE411, 0xE5FBC119, 0x1A0A52EF],
+            [0xF69F2445, 0xDF4F9B17, 0xAD2B417B, 0xE66C3710],
+        ];
+        const CIPHERTEXT: [[u32; 4]; 4] = [
+            [0xBD334F1D, 0x6E45F25F, 0xF712A214, 0x571FA5CC],
+            [0x97410484, 0x6D0AD3AD, 0x7734ECB3, 0xECEE4EEF],
+            [0xEF7AFD22, 0x70E2E60A, 0xDCE0BA2F, 0xACE6444E],
+            [0x9A4B41BA, 0x738D6C72, 0xFB166916, 0x03C18E0E],
+        ];
+
+        let expanded_key = super::key_expansion_192(KEY);
+
+        // encryption
+        for i in 0..4 {
+            let output = cipher_192(State(PLAINTEXT[i]), 12, expanded_key);
+            assert_eq!(output.0, CIPHERTEXT[i]);
+        }
+
+        // decryption
+        for i in 0..4 {
+            let output = inv_cipher_192(State(CIPHERTEXT[i]), 12, expanded_key);
+            assert_eq!(output.0, PLAINTEXT[i]);
+        }
+    }
+
+    /// ECB Encryption/Decryption Test Vector (256-bit key)
+    ///
+    /// Source: https://csrc.nist.gov/projects/cryptographic-standards-and-guidelines/example-values
+    #[test]
+    fn ecb_256() {
+        const KEY: [u32; 8] = [
+            0x603DEB10, 0x15CA71BE, 0x2B73AEF0, 0x857D7781, 0x1F352C07, 0x3B6108D7, 0x2D9810A3,
+            0x0914DFF4,
+        ];
+        const PLAINTEXT: [[u32; 4]; 4] = [
+            [0x6BC1BEE2, 0x2E409F96, 0xE93D7E11, 0x7393172A],
+            [0xAE2D8A57, 0x1E03AC9C, 0x9EB76FAC, 0x45AF8E51],
+            [0x30C81C46, 0xA35CE411, 0xE5FBC119, 0x1A0A52EF],
+            [0xF69F2445, 0xDF4F9B17, 0xAD2B417B, 0xE66C3710],
+        ];
+        const CIPHERTEXT: [[u32; 4]; 4] = [
+            [0xF3EED1BD, 0xB5D2A03C, 0x064B5A7E, 0x3DB181F8],
+            [0x591CCB10, 0xD410ED26, 0xDC5BA74A, 0x31362870],
+            [0xB6ED21B9, 0x9CA6F4F9, 0xF153E7B1, 0xBEAFED1D],
+            [0x23304B7A, 0x39F9F3FF, 0x067D8D8F, 0x9E24ECC7],
+        ];
+
+        let expanded_key = super::key_expansion_256(KEY);
+
+        // encryption
+        for i in 0..4 {
+            let output = cipher_256(State(PLAINTEXT[i]), 14, expanded_key);
+            assert_eq!(output.0, CIPHERTEXT[i]);
+        }
+
+        // decryption
+        for i in 0..4 {
+            let output = inv_cipher_256(State(CIPHERTEXT[i]), 14, expanded_key);
             assert_eq!(output.0, PLAINTEXT[i]);
         }
     }

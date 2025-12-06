@@ -2,7 +2,7 @@
 //!
 //! Solution to [Challenge 7](https://cryptopals.com/sets/1/challenges/7) of Cryptopals.
 
-use cryptopals_primitives::aes::Aes128;
+use cryptopals_primitives::{BlockCipher, aes::Aes128};
 use cryptopals_utils::base64;
 
 /// Decrypts a base64-encoded ciphertext using AES.
@@ -16,7 +16,7 @@ pub fn decrypt_aes(ciphertext_base64: &str, key: &[u8]) -> String {
     let ciphertext = base64::decode(&ciphertext_base64);
 
     // decrypt with key
-    let mut aes = Aes128::new(key);
+    let mut aes = Aes128::new(key.try_into().unwrap());
     let mut plaintext = String::new();
     for chunk in ciphertext.chunks(16) {
         let output = aes.decrypt_block(chunk.try_into().unwrap());
