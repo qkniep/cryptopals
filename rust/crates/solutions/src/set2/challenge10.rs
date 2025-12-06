@@ -8,7 +8,7 @@ use cryptopals_primitives::{BlockCipher, aes::Aes128};
 use cryptopals_utils::base64;
 use hybrid_array::sizes::U16;
 
-/// Decrypts
+/// Decrypts the base64-encoded ciphertext using AES in CBC mode.
 pub fn decrypt_cbc(ciphertext_base64: &str, key: &[u8]) -> Vec<u8> {
     // decode input
     let ciphertext_base64 = ciphertext_base64

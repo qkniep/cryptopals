@@ -1,6 +1,7 @@
 use cryptopals_modes::{cbc::Cbc, ecb::Ecb};
 use cryptopals_padding::pkcs7::Pkcs7;
 use cryptopals_primitives::{BlockCipher, aes::Aes128};
+use cryptopals_utils::base64;
 use hybrid_array::sizes::U16;
 use rand::prelude::*;
 
@@ -40,5 +41,42 @@ pub fn encryption_oracle_ecb_cbc(input: &[u8]) -> (Vec<u8>, ModeUsed) {
         let mut cbc = Cbc::new(aes, [0; 16].into());
         cbc.encrypt_padded::<Pkcs7<U16>>(&mut buffer, len);
         (buffer, ModeUsed::CBC)
+    }
+}
+
+pub struct ByteAtATimeEcbOracle {
+    aes: Aes128,
+    data_to_add: Vec<u8>,
+}
+
+impl ByteAtATimeEcbOracle {
+    pub fn new() -> Self {
+        const DATA_TO_ADD_BASE64: &str = "Um9sbGluJyBpbiBteSA1LjAKV2l0aCBteSByYWctdG9wIGRvd24gc28gbXkgaGFpciBjYW4gYmxvdwpUaGUgZ2lybGllcyBvbiBzdGFuZGJ5IHdhdmluZyBqdXN0IHRvIHNheSBoaQpEaWQgeW91IHN0b3A/IE5vLCBJIGp1c3QgZHJvdmUgYnkK";
+
+        // decode data to add
+        let data_to_add = base64::decode(DATA_TO_ADD_BASE64);
+
+        // initialize AES with random key
+        let mut rng = rand::rng();
+        let mut key = [0; 16];
+        rng.fill_bytes(&mut key);
+        let aes = Aes128::new(key.into());
+
+        Self { aes, data_to_add }
+    }
+
+    ///
+    pub fn encrypt(&self, input: &[u8]) -> Vec<u8> {
+        // create buffer with `data_to_add` appended
+        let len = input.len() + self.data_to_add.len();
+        let padding_len = 16 - len % 16;
+        let mut buffer = vec![0; len + padding_len];
+        buffer[..input.len()].copy_from_slice(input);
+        buffer[input.len()..len].copy_from_slice(&self.data_to_add);
+
+        // encrypt with ECB
+        let mut ecb = Ecb::new(self.aes.clone());
+        ecb.encrypt_padded::<Pkcs7<U16>>(&mut buffer, len);
+        buffer
     }
 }

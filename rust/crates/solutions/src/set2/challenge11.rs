@@ -4,7 +4,9 @@
 
 use cryptopals_attacks::{ModeUsed, encryption_oracle_ecb_cbc};
 
-/// Decrypts
+/// Detects the cipher mode used by [`encryption_oracle_ecb_cbc`].
+///
+/// Makes `iterations` guesses and returns the number of correct guesses.
 pub fn detect_cipher_mode(iterations: usize) -> usize {
     const PLAINTEXT: [u8; 64] = [0; 64];
 
