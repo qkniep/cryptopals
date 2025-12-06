@@ -12,8 +12,30 @@ use hybrid_array::{Array, ArraySize};
 
 use super::Padding;
 
+pub enum InvalidPaddingError {
+    PaddingTooLarge,
+    MismatchingPaddingBytes,
+}
+pub type Result<T> = core::result::Result<T, InvalidPaddingError>;
+
 ///
 pub struct Pkcs7<N: ArraySize>(core::marker::PhantomData<N>);
+
+impl<N: ArraySize> Pkcs7<N> {
+    pub fn unpad_checked(data: &[u8]) -> Result<&[u8]> {
+        assert!(data.len().is_multiple_of(N::USIZE));
+        let padding_byte = data[data.len() - 1];
+        if padding_byte > N::USIZE as u8 {
+            return Err(InvalidPaddingError::PaddingTooLarge);
+        }
+        for d in &data[data.len() - padding_byte as usize..] {
+            if *d != padding_byte {
+                return Err(InvalidPaddingError::MismatchingPaddingBytes);
+            }
+        }
+        Ok(&data[..data.len() - padding_byte as usize])
+    }
+}
 
 impl<N: ArraySize> Padding<N> for Pkcs7<N> {
     fn pad_bytes(data: &mut [u8], len: usize) {
