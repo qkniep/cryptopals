@@ -1,18 +1,18 @@
 [package]
-name = "cryptopals-modes"
+name = "cryptopals-padding"
 version = "0.1.0"
 edition = "2024"
 authors.workspace = true
-description = "Block-cipher modes implemented for Cryptopals"
+description = "Padding functions for Cryptopals"
 license.workspace = true
 repository.workspace = true
 publish = false
 
 [dependencies]
-anyhow = { workspace = true }
-cryptopals-padding = { path = "../padding" }
-rand = { workspace = true }
+thiserror = { workspace = true }
 zeroize = { workspace = true }
+hybrid-array = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }
+rand = { workspace = true }

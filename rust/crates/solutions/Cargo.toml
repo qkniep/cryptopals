@@ -10,8 +10,10 @@ publish = false
 
 [dependencies]
 anyhow = { workspace = true }
+cryptopals-padding = { path = "../padding" }
 cryptopals-primitives = { path = "../primitives" }
 cryptopals-utils = { path = "../utils" }
+hybrid-array = { workspace = true }
 rand = { workspace = true }
 zeroize = { workspace = true }
 

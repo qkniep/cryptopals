@@ -2,16 +2,16 @@
 name = "cryptopals-primitives"
 version = "0.1.0"
 edition = "2024"
-authors = ["Quentin <you@example.com>"]
-description = "Utility functions for Cryptopals: encoding, byte ops, conversions, helpers."
-license = "MIT OR Apache-2.0"
-repository = "https://github.com/yourusername/cryptopals"
+authors.workspace = true
+description = "Cryptographic primitives implemented for Cryptopals"
+license.workspace = true
+repository.workspace = true
 publish = false
 
 [dependencies]
 thiserror = { workspace = true }
 zeroize = { workspace = true }
-generic-array = { workspace = true }
+hybrid-array = { workspace = true }
 
 [dev-dependencies]
 criterion = { workspace = true }

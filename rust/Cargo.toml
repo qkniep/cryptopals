@@ -1,10 +1,11 @@
 [workspace]
 members = [
-    "crates/primitives",
-    "crates/modes",
     "crates/attacks",
-    "crates/utils",
+    "crates/modes",
+    "crates/padding",
+    "crates/primitives",
     "crates/solutions",
+    "crates/utils",
     # "xtask",
 ]
 
@@ -17,31 +18,19 @@ authors = ["Quentin Kniep <hello@quentinkniep.com>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/qkniep/cryptopals"
 
-# These are shared dependencies specified once for the whole workspace.
-# Individual crates pull from these using `workspace = true`.
 [workspace.dependencies]
 cryptopals-attacks = { path = "crates/attacks" }
 cryptopals-modes = { path = "crates/modes" }
+cryptopals-padding = { path = "crates/padding" }
 cryptopals-primitives = { path = "crates/primitives" }
 cryptopals-solutions = { path = "crates/solutions" }
 cryptopals-utils = { path = "crates/utils" }
 
-# Error handling
-thiserror = "2"
 anyhow = "1"
-
-# Useful for testing or benchmarks
-criterion = "0.8"
-rand = "0.9"
-
-# Fuzzing (optional, but highly recommended)
-arbitrary = { version = "1.3", features = ["derive"] }
-
-# Generic-array for fixed-size typenum buffers (if needed)
-generic-array = "1"
-
-# Zeroing sensitive memory
-zeroize = "1"
-
-# Used for xtask
+arbitrary = { version = "1", features = ["derive"] }
 clap = { version = "4", features = ["derive"] }
+criterion = "0.8"
+hybrid-array = "0.4"
+rand = "0.9"
+thiserror = "2"
+zeroize = "1"
