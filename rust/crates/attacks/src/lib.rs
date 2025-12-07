@@ -3,10 +3,8 @@ use std::collections::HashMap;
 use cryptopals_modes::{cbc::Cbc, ecb::Ecb};
 use cryptopals_padding::pkcs7::Pkcs7;
 use cryptopals_primitives::{BlockCipher, aes::Aes128};
-use cryptopals_utils::{
-    base64, hex,
-    url_params::{self, build_url_params, parse_url_params},
-};
+use cryptopals_utils::url_params::{build_url_params, parse_url_params};
+use cryptopals_utils::{base64, hex};
 use hybrid_array::sizes::U16;
 use rand::prelude::*;
 
@@ -171,6 +169,53 @@ impl EcbUserOracle {
         let params = parse_url_params(&String::from_utf8_lossy(user_token));
         println!("params: {:#?}", params);
         params.get("role") == Some(&"admin".to_string())
+    }
+}
+
+pub struct CbcUserdataOracle {
+    aes: Aes128,
+    prefix: String,
+    suffix: String,
+}
+
+impl CbcUserdataOracle {
+    pub fn new() -> Self {
+        // initialize AES with random key
+        let mut rng = rand::rng();
+        let mut key = [0; 16];
+        rng.fill_bytes(&mut key);
+        let aes = Aes128::new(key.into());
+
+        let prefix = "comment1=cooking%20MCs;userdata=".to_string();
+        let suffix = ";comment2=%20like%20a%20pound%20of%20bac".to_string();
+
+        Self {
+            aes,
+            prefix,
+            suffix,
+        }
+    }
+
+    pub fn encrypt(&self, input: &str) -> String {
+        // adapt plaintext
+        let sanitized_input = input.replace('=', "\"=\"").replace(';', "\";\"");
+        let plaintext = format!("{}{}{}", self.prefix, sanitized_input, self.suffix);
+
+        // encrypt
+        let mut cbc = Cbc::new(self.aes.clone(), [0; 16].into());
+        let mut buffer = vec![0; plaintext.len().next_multiple_of(16)];
+        buffer[..plaintext.len()].copy_from_slice(plaintext.as_bytes());
+        cbc.encrypt_padded::<Pkcs7<U16>>(&mut buffer, plaintext.len());
+
+        hex::encode(&buffer)
+    }
+
+    pub fn try_admin_action(&self, ciphertext_hex: &str) -> bool {
+        let mut ciphertext = hex::decode(ciphertext_hex);
+        let mut cbc = Cbc::new(self.aes.clone(), [0; 16].into());
+        let plaintext = cbc.decrypt_padded::<Pkcs7<U16>>(&mut ciphertext);
+        let plaintext_str = String::from_utf8_lossy(plaintext);
+        plaintext_str.contains(";admin=true;")
     }
 }
 

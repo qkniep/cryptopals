@@ -2,7 +2,6 @@
 //!
 //! Solution to [Challenge 15](https://cryptopals.com/sets/2/challenges/15) of Cryptopals.
 
-use cryptopals_attacks::ByteAtATimeEcbOracle;
 use cryptopals_padding::pkcs7::Pkcs7;
 use hybrid_array::sizes::U16;
 

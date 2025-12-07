@@ -40,7 +40,7 @@ impl<N: ArraySize> Pkcs7<N> {
 impl<N: ArraySize> Padding<N> for Pkcs7<N> {
     fn pad_bytes(data: &mut [u8], len: usize) {
         assert!(len <= data.len());
-        let padding_byte = data.len() as u8 - len as u8;
+        let padding_byte = (data.len() - len) as u8;
         data[len..].fill(padding_byte);
     }
 
