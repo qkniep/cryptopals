@@ -187,7 +187,7 @@ impl CbcUserdataOracle {
         let aes = Aes128::new(key.into());
 
         let prefix = "comment1=cooking%20MCs;userdata=".to_string();
-        let suffix = ";comment2=%20like%20a%20pound%20of%20bac".to_string();
+        let suffix = ";comment2=%20like%20a%20pound%20of%20bacon".to_string();
 
         Self {
             aes,
@@ -200,6 +200,7 @@ impl CbcUserdataOracle {
         // adapt plaintext
         let sanitized_input = input.replace('=', "\"=\"").replace(';', "\";\"");
         let plaintext = format!("{}{}{}", self.prefix, sanitized_input, self.suffix);
+        println!("plaintext: {}", plaintext);
 
         // encrypt
         let mut cbc = Cbc::new(self.aes.clone(), [0; 16].into());
